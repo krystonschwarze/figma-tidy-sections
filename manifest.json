@@ -3,6 +3,7 @@
   "id": "1413529288436491283",
   "api": "1.0.0",
   "main": "code.js",
+  "ui": "ui.html",
   "capabilities": [],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",

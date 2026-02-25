@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg:    var(--figma-color-bg, #2c2c2c);
+    --bg2:   var(--figma-color-bg-secondary, #383838);
+    --hover: var(--figma-color-bg-hover, #404040);
+    --press: var(--figma-color-bg-pressed, #4a4a4a);
+    --brd:   var(--figma-color-border, #444);
+    --txt:   var(--figma-color-text, #ebebeb);
+    --txt2:  var(--figma-color-text-secondary, #adadad);
+    --txt3:  var(--figma-color-text-tertiary, #6e6e6e);
+    --brand: var(--figma-color-bg-brand, #0c8ce9);
+    --onbr:  var(--figma-color-text-onbrand, #fff);
+  }
+  body {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--txt);
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    height: 100vh; overflow: hidden;
+  }
+
+  /* ─── Header ─── */
+  .hd {
+    display: flex; align-items: center;
+    height: 40px; padding: 0 12px; gap: 8px;
+    border-bottom: 1px solid var(--brd);
+    flex-shrink: 0;
+  }
+  .hd-ic {
+    width: 8px; height: 8px; border-radius: 2px;
+    background: var(--brand); flex-shrink: 0;
+  }
+  .hd-t {
+    font-weight: 600; font-size: 11px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0;
+  }
+  .hd-n { color: var(--txt2); font-size: 10px; flex-shrink: 0; }
+
+  /* ─── Body ─── */
+  .bd {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 0 8px;
+    display: flex; flex-direction: column;
+  }
+
+  /* ─── Group (section with dividers between) ─── */
+  .grp {
+    display: flex; flex-direction: column;
+    gap: 6px; padding: 10px 0;
+  }
+  .grp + .grp { border-top: 1px solid var(--brd); }
+
+  /* ─── Section label ─── */
+  .sl {
+    font-size: 10px; color: var(--txt3);
+    font-weight: 500; letter-spacing: 0.02em;
+  }
+
+  /* ─── Segment control ─── */
+  .seg {
+    display: flex; height: 32px;
+    background: var(--bg2); border-radius: 8px;
+    padding: 3px; gap: 2px;
+  }
+  .sb {
+    flex: 1; border: none; cursor: pointer;
+    background: transparent; color: var(--txt3);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .12s;
+  }
+  .sb:hover { color: var(--txt2); background: var(--hover); }
+  .sb.on {
+    background: var(--press); color: var(--txt);
+    box-shadow: 0 0.5px 1px rgba(0,0,0,.3), inset 0 0.5px 0 rgba(255,255,255,.06);
+  }
+  .sb svg { width: 16px; height: 16px; }
+
+  /* ─── Row ─── */
+  .rw { display: flex; gap: 4px; align-items: stretch; }
+
+  /* ─── Input field (icon/label + value) ─── */
+  .fi {
+    flex: 1; height: 32px; display: flex; align-items: center;
+    background: var(--bg2); border-radius: 6px;
+    padding: 0 8px; gap: 6px;
+    transition: background .1s;
+    cursor: text;
+  }
+  .fi:hover { background: var(--hover); }
+  .fi:focus-within { background: var(--bg); outline: 2px solid var(--brand); outline-offset: -2px; }
+  .fi svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--txt3); }
+  .fi span { font-size: 10px; color: var(--txt3); flex-shrink: 0; font-weight: 500; min-width: 10px; }
+  .fi input {
+    flex: 1; width: 100%; height: 100%;
+    border: none; outline: none; background: transparent;
+    color: var(--txt); font-family: inherit; font-size: 11px;
+    text-align: right; padding: 0;
+    -moz-appearance: textfield;
+  }
+  .fi input::-webkit-inner-spin-button,
+  .fi input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .fi input::placeholder { color: var(--txt3); }
+
+  /* ─── 9-dot alignment grid ─── */
+  .al {
+    width: 72px; height: 72px; flex-shrink: 0;
+    display: grid; grid-template: repeat(3,1fr) / repeat(3,1fr);
+    background: var(--bg2); border-radius: 6px;
+    padding: 8px; gap: 0;
+    position: relative;
+  }
+  /* Crosshair indicator lines */
+  .al::before, .al::after {
+    content: ''; position: absolute;
+    background: var(--brand); opacity: 0; border-radius: 1px;
+    transition: all .15s; pointer-events: none;
+  }
+  .al::before { width: calc(100% - 16px); height: 1.5px; left: 8px; }
+  .al::after  { height: calc(100% - 16px); width: 1.5px; top: 8px; }
+  .al[data-av="start"]::before  { top: calc(8px + (100% - 16px) / 6); opacity: .5; }
+  .al[data-av="center"]::before { top: calc(50% - 0.75px); opacity: .5; }
+  .al[data-av="end"]::before    { bottom: calc(8px + (100% - 16px) / 6); opacity: .5; top: auto; }
+  .al[data-ah="start"]::after   { left: calc(8px + (100% - 16px) / 6); opacity: .5; }
+  .al[data-ah="center"]::after  { left: calc(50% - 0.75px); opacity: .5; }
+  .al[data-ah="end"]::after     { right: calc(8px + (100% - 16px) / 6); opacity: .5; left: auto; }
+
+  .dt {
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border-radius: 3px;
+    transition: background .08s; z-index: 1;
+  }
+  .dt:hover { background: rgba(255,255,255,.06); }
+  .dt::after {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--txt3); transition: all .12s;
+  }
+  .dt.on::after { background: var(--brand); width: 7px; height: 7px; }
+
+  /* ─── Preset chips (compact, left-aligned) ─── */
+  .ps { display: flex; gap: 3px; justify-content: flex-start; }
+  .ch {
+    height: 20px; padding: 0 7px;
+    border: none;
+    background: none;
+    color: var(--txt3);
+    font-family: inherit; font-size: 10px; font-weight: 400;
+    cursor: pointer; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .1s;
+  }
+  .ch:hover { color: var(--txt); background: var(--hover); }
+  .ch:active { color: var(--txt); background: var(--press); }
+
+  /* ─── Grid options ─── */
+  .gb { display: none; }
+  .gb.on { display: flex; }
+  .gb .rw { gap: 6px; }
+  /* Wrap toggle */
+  .wl {
+    display: flex; align-items: center; gap: 6px; height: 32px;
+    font-size: 11px; color: var(--txt2); cursor: pointer; user-select: none;
+    padding: 0 4px;
+  }
+  .wl input { display: none; }
+  .wb {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1.5px solid var(--txt3); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .12s;
+  }
+  .wl input:checked + .wb { background: var(--brand); border-color: var(--brand); }
+  .wb svg { width: 10px; height: 10px; color: var(--onbr); opacity: 0; transition: opacity .1s; }
+  .wl input:checked + .wb svg { opacity: 1; }
+
+  /* ─── Apply button ─── */
+  .ft { padding: 8px 8px 10px; flex-shrink: 0; margin-top: auto; }
+  .ap {
+    width: 100%; height: 32px; border: none; border-radius: 6px;
+    background: var(--brand); color: var(--onbr);
+    font-family: inherit; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .12s;
+  }
+  .ap:hover { filter: brightness(1.1); }
+  .ap:active { filter: brightness(.85); }
+  .ap.ok { background: #1bc47d; }
+
+  /* ─── Error state ─── */
+  .ev {
+    display: none; flex: 1; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 40px 24px;
+  }
+  .ev.on { display: flex; }
+  .ev svg { width: 28px; height: 28px; color: var(--txt3); }
+  .ev-t { color: var(--txt2); font-size: 12px; line-height: 1.5; }
+
+  .mn { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .mn.off { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Error -->
+<div class="ev" id="ev">
+  <svg viewBox="0 0 28 28" fill="none">
+    <rect x="3" y="3" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2.5"/>
+    <path d="M10 14h8M14 10v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <div class="ev-t" id="evMsg">Select a Section to organize.</div>
+</div>
+
+<!-- Main -->
+<div class="mn off" id="mn">
+  <div class="hd">
+    <div class="hd-ic"></div>
+    <div class="hd-t" id="hN">Section</div>
+    <div class="hd-n" id="hC">0 items</div>
+  </div>
+  <div class="bd">
+
+    <!-- Group: Direction -->
+    <div class="grp">
+      <div class="seg" id="dG">
+        <button class="sb on" data-v="horizontal" title="Horizontal">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M10 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="sb" data-v="vertical" title="Vertical">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M5 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="sb" data-v="grid" title="Grid">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="3" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="9" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Group: Alignment -->
+    <div class="grp">
+      <div class="al" id="al" data-ah="center" data-av="center">
+        <div class="dt" data-h="start"  data-v="start"></div>
+        <div class="dt" data-h="center" data-v="start"></div>
+        <div class="dt" data-h="end"    data-v="start"></div>
+        <div class="dt" data-h="start"  data-v="center"></div>
+        <div class="dt on" data-h="center" data-v="center"></div>
+        <div class="dt" data-h="end"    data-v="center"></div>
+        <div class="dt" data-h="start"  data-v="end"></div>
+        <div class="dt" data-h="center" data-v="end"></div>
+        <div class="dt" data-h="end"    data-v="end"></div>
+      </div>
+    </div>
+
+    <!-- Group: Gap -->
+    <div class="grp">
+      <div class="sl">Gap</div>
+      <div class="rw">
+        <div class="fi">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M1 4h12M1 10h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M7 6v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M6 6.5 7 5.5l1 1M6 7.5 7 8.5l1-1" stroke="currentColor" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <input type="number" id="gap" value="64" min="0" max="2000" step="8">
+        </div>
+      </div>
+      <div class="ps" data-t="gap">
+        <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
+      </div>
+    </div>
+
+    <!-- Group: Padding -->
+    <div class="grp">
+      <div class="sl">Padding</div>
+      <div class="rw">
+        <div class="fi"><span>T</span><input type="number" id="pT" value="64" min="0" max="2000" step="8"></div>
+        <div class="fi"><span>R</span><input type="number" id="pR" value="64" min="0" max="2000" step="8"></div>
+        <div class="fi"><span>B</span><input type="number" id="pB" value="64" min="0" max="2000" step="8"></div>
+        <div class="fi"><span>L</span><input type="number" id="pL" value="64" min="0" max="2000" step="8"></div>
+      </div>
+      <div class="ps" data-t="pad">
+        <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
+      </div>
+    </div>
+
+    <!-- Group: Grid options -->
+    <div class="grp gb" id="gB">
+      <div class="sl">Grid</div>
+      <div class="rw">
+        <div class="fi"><span>C</span><input type="number" id="gC" value="0" min="0" max="20" step="1" placeholder="Auto"></div>
+        <div class="fi"><span>R</span><input type="number" id="gR" value="0" min="0" max="20" step="1" placeholder="Auto"></div>
+        <label class="wl">
+          <input type="checkbox" id="gW" checked>
+          <div class="wb"><svg viewBox="0 0 10 10" fill="none"><path d="M2 5.5 4 7.5 8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          Wrap
+        </label>
+      </div>
+    </div>
+
+  </div>
+  <div class="ft"><button class="ap" id="aB">Apply</button></div>
+</div>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var ev=$('ev'),evMsg=$('evMsg'),mn=$('mn');
+  var hN=$('hN'),hC=$('hC'),aB=$('aB');
+  var dG=$('dG'),al=$('al');
+  var gap=$('gap'),pT=$('pT'),pR=$('pR'),pB=$('pB'),pL=$('pL');
+  var gB=$('gB'),gC=$('gC'),gR=$('gR'),gW=$('gW');
+
+  var layout='horizontal',aH='center',aV='center';
+
+  document.querySelectorAll('.fi').forEach(function(f){
+    f.addEventListener('click',function(e){
+      if(e.target.tagName!=='INPUT') f.querySelector('input').focus();
+    });
+  });
+
+  dG.querySelectorAll('.sb').forEach(function(b){
+    b.addEventListener('click',function(){
+      dG.querySelectorAll('.sb').forEach(function(x){x.classList.remove('on')});
+      b.classList.add('on'); layout=b.dataset.v;
+      gB.classList.toggle('on',layout==='grid');
+    });
+  });
+
+  al.querySelectorAll('.dt').forEach(function(d){
+    d.addEventListener('click',function(){
+      al.querySelectorAll('.dt').forEach(function(x){x.classList.remove('on')});
+      d.classList.add('on');
+      aH=d.dataset.h; aV=d.dataset.v;
+      al.dataset.ah=aH; al.dataset.av=aV;
+    });
+  });
+
+  document.querySelectorAll('.ps').forEach(function(row){
+    var t=row.dataset.t;
+    row.querySelectorAll('.ch').forEach(function(c){
+      c.addEventListener('click',function(){
+        var v=c.textContent;
+        if(t==='gap') gap.value=v;
+        if(t==='pad'){pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
+      });
+    });
+  });
+
+  function showErr(r){
+    var m={'no-selection':'Select a Section to organize.',
+           'not-a-section':'Selected element is not a Section.',
+           'empty-section':'Section is empty. Add frames first.'};
+    evMsg.textContent=m[r]||r||'Select a Section.';
+    ev.classList.add('on');mn.classList.add('off');
+  }
+  function showMain(name,count){
+    hN.textContent=name;
+    hC.textContent=count+(count===1?' item':' items');
+    ev.classList.remove('on');mn.classList.remove('off');
+  }
+
+  onmessage=function(e){
+    var msg=e.data.pluginMessage;if(!msg)return;
+    if(msg.type==='init'){
+      msg.selectionValid?showMain(msg.sectionName,msg.childCount):showErr(msg.errorReason);
+    }
+    if(msg.type==='done'){
+      aB.classList.add('ok');aB.textContent='Done!';
+      setTimeout(function(){aB.classList.remove('ok');aB.textContent='Apply';},800);
+    }
+  };
+
+  aB.addEventListener('click',function(){
+    parent.postMessage({pluginMessage:{
+      type:'apply',layout:layout,alignH:aH,alignV:aV,
+      padding:{top:+pT.value||0,right:+pR.value||0,bottom:+pB.value||0,left:+pL.value||0},
+      gap:+gap.value||0,
+      gridColumns:+gC.value||0,gridRows:+gR.value||0,gridWrap:gW.checked
+    }},'*');
+  });
+})();
+</script>
+</body>
+</html>
