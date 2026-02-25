@@ -159,6 +159,24 @@
   .ch:hover { color: var(--txt); background: var(--hover); }
   .ch:active { color: var(--txt); background: var(--press); }
 
+  /* ─── Padding toggle ─── */
+  .sl-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pt {
+    width: 20px; height: 20px; border: none; background: none;
+    color: var(--txt3); cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .1s;
+  }
+  .pt:hover { color: var(--txt2); background: var(--hover); }
+  .pt.on { color: var(--brand); }
+  .pt svg { width: 14px; height: 14px; }
+  .pd-single, .pd-multi { display: flex; flex-direction: column; gap: 6px; }
+  .pd-multi { display: none; }
+  .pd-multi.on { display: flex; }
+  .pd-single.off { display: none; }
+
   /* ─── Grid options ─── */
   .gb { display: none; }
   .gb.on { display: flex; }
@@ -272,15 +290,35 @@
 
     <!-- Group: Padding -->
     <div class="grp">
-      <div class="sl">Padding</div>
-      <div class="rw">
-        <div class="fi"><span>T</span><input type="number" id="pT" value="64" min="0" max="2000" step="8"></div>
-        <div class="fi"><span>R</span><input type="number" id="pR" value="64" min="0" max="2000" step="8"></div>
-        <div class="fi"><span>B</span><input type="number" id="pB" value="64" min="0" max="2000" step="8"></div>
-        <div class="fi"><span>L</span><input type="number" id="pL" value="64" min="0" max="2000" step="8"></div>
+      <div class="sl-row">
+        <div class="sl">Padding</div>
+        <button class="pt" id="pM" title="Individual padding">
+          <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.5 2"/></svg>
+        </button>
       </div>
-      <div class="ps" data-t="pad">
-        <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
+      <!-- Single value (default) -->
+      <div class="pd-single" id="pS">
+        <div class="rw">
+          <div class="fi">
+            <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="4.5" y="4.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>
+            <input type="number" id="pA" value="64" min="0" max="2000" step="8">
+          </div>
+        </div>
+        <div class="ps" data-t="pad">
+          <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
+        </div>
+      </div>
+      <!-- Individual values (hidden) -->
+      <div class="pd-multi" id="pI">
+        <div class="rw">
+          <div class="fi"><span>T</span><input type="number" id="pT" value="64" min="0" max="2000" step="8"></div>
+          <div class="fi"><span>R</span><input type="number" id="pR" value="64" min="0" max="2000" step="8"></div>
+          <div class="fi"><span>B</span><input type="number" id="pB" value="64" min="0" max="2000" step="8"></div>
+          <div class="fi"><span>L</span><input type="number" id="pL" value="64" min="0" max="2000" step="8"></div>
+        </div>
+        <div class="ps" data-t="pad4">
+          <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
+        </div>
       </div>
     </div>
 
@@ -308,10 +346,12 @@
   var ev=$('ev'),evMsg=$('evMsg'),mn=$('mn');
   var hN=$('hN'),hC=$('hC'),aB=$('aB');
   var dG=$('dG'),al=$('al');
-  var gap=$('gap'),pT=$('pT'),pR=$('pR'),pB=$('pB'),pL=$('pL');
+  var gap=$('gap'),pA=$('pA'),pT=$('pT'),pR=$('pR'),pB=$('pB'),pL=$('pL');
+  var pM=$('pM'),pS=$('pS'),pI=$('pI');
   var gB=$('gB'),gC=$('gC'),gR=$('gR'),gW=$('gW');
 
   var layout='horizontal',aH='center',aV='center';
+  var padMulti=false;
 
   document.querySelectorAll('.fi').forEach(function(f){
     f.addEventListener('click',function(e){
@@ -336,13 +376,36 @@
     });
   });
 
+  // Padding toggle
+  pM.addEventListener('click',function(){
+    padMulti=!padMulti;
+    pM.classList.toggle('on',padMulti);
+    pS.classList.toggle('off',padMulti);
+    pI.classList.toggle('on',padMulti);
+    if(padMulti){
+      // sync single → individual
+      var v=pA.value;
+      pT.value=v;pR.value=v;pB.value=v;pL.value=v;
+    } else {
+      // sync individual → single (use top value)
+      pA.value=pT.value;
+    }
+  });
+
+  // Single padding syncs to all four
+  pA.addEventListener('input',function(){
+    var v=pA.value;
+    pT.value=v;pR.value=v;pB.value=v;pL.value=v;
+  });
+
   document.querySelectorAll('.ps').forEach(function(row){
     var t=row.dataset.t;
     row.querySelectorAll('.ch').forEach(function(c){
       c.addEventListener('click',function(){
         var v=c.textContent;
         if(t==='gap') gap.value=v;
-        if(t==='pad'){pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
+        if(t==='pad'){pA.value=v;pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
+        if(t==='pad4'){pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
       });
     });
   });
