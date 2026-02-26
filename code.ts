@@ -8,7 +8,7 @@ interface Padding {
 }
 
 interface LayoutConfig {
-  layout: 'horizontal' | 'vertical' | 'grid';
+  layout: 'horizontal' | 'vertical' | 'grid' | 'auto';
   alignH: 'start' | 'center' | 'end';
   alignV: 'start' | 'center' | 'end';
   padding: Padding;
@@ -18,19 +18,48 @@ interface LayoutConfig {
   gridWrap: boolean;
 }
 
+interface StoredConfig {
+  layout: 'horizontal' | 'vertical' | 'grid' | 'auto';
+  alignH: 'start' | 'center' | 'end';
+  alignV: 'start' | 'center' | 'end';
+  gap: number;
+  padMulti: boolean;
+  padAll: number;
+  padTop: number;
+  padRight: number;
+  padBottom: number;
+  padLeft: number;
+  gridColumns: number;
+  gridRows: number;
+  gridWrap: boolean;
+}
+
+interface CustomValues {
+  gap: number[];
+  pad: number[];
+}
+
+// ── Storage ──
+
+const STORAGE_LAST = 'sectify-last';
+const STORAGE_VALUES = 'sectify-values';
+
 // ── Show UI ──
 
 figma.showUI(__html__, {
   width: 280,
-  height: 460,
+  height: 520,
   title: 'Sectify',
   themeColors: true
 });
 
 // ── Selection Validation ──
 
-function validateAndInit(): void {
+function validateAndInit(lastConfig: StoredConfig | null = null, customValues: CustomValues | null = null): void {
   const selection = figma.currentPage.selection;
+  const extra: { lastConfig?: StoredConfig; customValues?: CustomValues } = {};
+  if (lastConfig !== null) extra.lastConfig = lastConfig;
+  if (customValues !== null) extra.customValues = customValues;
 
   if (selection.length === 0) {
     figma.ui.postMessage({
@@ -38,7 +67,8 @@ function validateAndInit(): void {
       selectionValid: false,
       childCount: 0,
       sectionName: '',
-      errorReason: 'no-selection'
+      errorReason: 'no-selection',
+      ...extra
     });
     return;
   }
@@ -51,7 +81,8 @@ function validateAndInit(): void {
       selectionValid: false,
       childCount: 0,
       sectionName: '',
-      errorReason: 'not-a-section'
+      errorReason: 'not-a-section',
+      ...extra
     });
     return;
   }
@@ -63,7 +94,8 @@ function validateAndInit(): void {
       selectionValid: false,
       childCount: 0,
       sectionName: section.name,
-      errorReason: 'empty-section'
+      errorReason: 'empty-section',
+      ...extra
     });
     return;
   }
@@ -72,14 +104,24 @@ function validateAndInit(): void {
     type: 'init',
     selectionValid: true,
     childCount: section.children.length,
-    sectionName: section.name
+    sectionName: section.name,
+    ...extra
   });
 }
 
-// Run on startup
-validateAndInit();
+// Run on startup — load storage then validate
+async function startup(): Promise<void> {
+  const [lastConfigRaw, valuesRaw] = await Promise.all([
+    figma.clientStorage.getAsync(STORAGE_LAST),
+    figma.clientStorage.getAsync(STORAGE_VALUES)
+  ]);
+  const lastConfig = (lastConfigRaw as StoredConfig | undefined) ?? null;
+  const customValues: CustomValues = (valuesRaw as CustomValues | undefined) ?? { gap: [], pad: [] };
+  validateAndInit(lastConfig, customValues);
+}
+startup();
 
-// Re-run when selection changes (live update)
+// Re-run when selection changes (no storage — keep current UI values)
 figma.on('selectionchange', () => {
   validateAndInit();
 });
@@ -241,6 +283,61 @@ function layoutGrid(children: SceneNode[], config: LayoutConfig): { width: numbe
   };
 }
 
+// ── Layout: Auto (preserve existing arrangement, adjust gap/padding) ──
+
+function layoutAuto(children: SceneNode[], config: LayoutConfig): { width: number; height: number } {
+  const { alignV, padding, gap } = config;
+
+  if (children.length === 0) return { width: padding.left + padding.right, height: padding.top + padding.bottom };
+
+  // Group children into rows by Y-position
+  const minH = Math.min(...children.map(c => c.height));
+  const threshold = Math.max(minH / 2, 5);
+
+  const sorted = [...children].sort((a, b) => {
+    if (Math.abs(a.y - b.y) < threshold) return a.x - b.x;
+    return a.y - b.y;
+  });
+
+  const rows: SceneNode[][] = [];
+  let currentRow: SceneNode[] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (Math.abs(sorted[i].y - currentRow[0].y) < threshold) {
+      currentRow.push(sorted[i]);
+    } else {
+      currentRow.sort((a, b) => a.x - b.x);
+      rows.push(currentRow);
+      currentRow = [sorted[i]];
+    }
+  }
+  currentRow.sort((a, b) => a.x - b.x);
+  rows.push(currentRow);
+
+  // Position row by row
+  let cursorY = padding.top;
+  let maxRowWidth = 0;
+
+  for (const row of rows) {
+    const rowH = Math.max(...row.map(c => c.height));
+    let cursorX = padding.left;
+
+    for (const child of row) {
+      child.x = cursorX;
+      child.y = cursorY + alignOffset(rowH, child.height, alignV);
+      cursorX += child.width + gap;
+    }
+
+    const rowWidth = cursorX - gap;
+    if (rowWidth > maxRowWidth) maxRowWidth = rowWidth;
+    cursorY += rowH + gap;
+  }
+
+  return {
+    width: maxRowWidth + padding.right,
+    height: (cursorY - gap) + padding.bottom
+  };
+}
+
 // ── Apply Layout ──
 
 function applyLayout(section: SectionNode, config: LayoutConfig): void {
@@ -259,6 +356,9 @@ function applyLayout(section: SectionNode, config: LayoutConfig): void {
     case 'grid':
       size = layoutGrid(children, config);
       break;
+    case 'auto':
+      size = layoutAuto(children, config);
+      break;
     default:
       size = layoutHorizontal(children, config);
   }
@@ -270,18 +370,6 @@ function applyLayout(section: SectionNode, config: LayoutConfig): void {
 }
 
 // ── Message Handler ──
-
-interface ApplyMessage {
-  type: 'apply';
-  layout: 'horizontal' | 'vertical' | 'grid';
-  alignH: 'start' | 'center' | 'end';
-  alignV: 'start' | 'center' | 'end';
-  padding: { top: number; right: number; bottom: number; left: number };
-  gap: number;
-  gridColumns: number;
-  gridRows: number;
-  gridWrap: boolean;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 figma.ui.onmessage = (msg: any) => {
@@ -324,7 +412,54 @@ figma.ui.onmessage = (msg: any) => {
 
     applyLayout(section, config);
 
+    // Persist last-used config
+    const stored: StoredConfig = {
+      layout: config.layout,
+      alignH: config.alignH,
+      alignV: config.alignV,
+      gap: config.gap,
+      padMulti: msg.padMulti ?? false,
+      padAll: msg.padAll ?? config.padding.top,
+      padTop: config.padding.top,
+      padRight: config.padding.right,
+      padBottom: config.padding.bottom,
+      padLeft: config.padding.left,
+      gridColumns: config.gridColumns,
+      gridRows: config.gridRows,
+      gridWrap: config.gridWrap
+    };
+    figma.clientStorage.setAsync(STORAGE_LAST, stored);
+
     figma.ui.postMessage({ type: 'done' });
     figma.notify(`Arranged ${section.children.length} items in "${section.name}"`);
+  }
+
+  // ── Custom Value CRUD ──
+
+  if (msg.type === 'save-value') {
+    (async () => {
+      const raw = await figma.clientStorage.getAsync(STORAGE_VALUES);
+      const values: CustomValues = (raw as CustomValues | undefined) ?? { gap: [], pad: [] };
+      const cat = msg.category as 'gap' | 'pad';
+      const val = msg.value as number;
+      if (values[cat].indexOf(val) === -1) {
+        values[cat].push(val);
+        values[cat].sort((a: number, b: number) => a - b);
+      }
+      await figma.clientStorage.setAsync(STORAGE_VALUES, values);
+      figma.ui.postMessage({ type: 'values-updated', values });
+    })();
+  }
+
+  if (msg.type === 'delete-value') {
+    (async () => {
+      const raw = await figma.clientStorage.getAsync(STORAGE_VALUES);
+      const values: CustomValues = (raw as CustomValues | undefined) ?? { gap: [], pad: [] };
+      const cat = msg.category as 'gap' | 'pad';
+      const val = msg.value as number;
+      values[cat] = values[cat].filter((v: number) => v !== val);
+      await figma.clientStorage.setAsync(STORAGE_VALUES, values);
+      figma.ui.postMessage({ type: 'values-updated', values });
+    })();
   }
 };

@@ -56,6 +56,8 @@
     gap: 6px; padding: 10px 0;
   }
   .grp + .grp { border-top: 1px solid var(--brd); }
+  .grp.off { display: none; }
+  .grp.off + .grp { border-top: none; }
 
   /* ─── Section label ─── */
   .sl {
@@ -145,7 +147,7 @@
   .dt.on::after { background: var(--brand); width: 7px; height: 7px; }
 
   /* ─── Preset chips (compact, left-aligned) ─── */
-  .ps { display: flex; gap: 3px; justify-content: flex-start; }
+  .ps { display: flex; gap: 3px; justify-content: flex-start; flex-wrap: wrap; }
   .ch {
     height: 20px; padding: 0 7px;
     border: none;
@@ -158,6 +160,26 @@
   }
   .ch:hover { color: var(--txt); background: var(--hover); }
   .ch:active { color: var(--txt); background: var(--press); }
+  .ch.custom { color: var(--txt2); }
+  .ch-add {
+    height: 20px; width: 20px; padding: 0;
+    border: 1px dashed var(--txt3);
+    background: none; color: var(--txt3);
+    font-family: inherit; font-size: 12px; font-weight: 300;
+    cursor: pointer; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .1s;
+  }
+  .ch-add:hover { border-color: var(--txt2); color: var(--txt2); background: var(--hover); }
+  .ch-input {
+    height: 20px; width: 48px; padding: 0 4px;
+    border: 1px solid var(--brand); background: var(--bg2);
+    color: var(--txt); font-family: inherit; font-size: 10px;
+    border-radius: 10px; outline: none; text-align: center;
+    -moz-appearance: textfield;
+  }
+  .ch-input::-webkit-inner-spin-button,
+  .ch-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
   /* ─── Padding toggle ─── */
   .sl-row {
@@ -222,6 +244,48 @@
 
   .mn { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .mn.off { display: none; }
+
+  /* ─── Settings overlay ─── */
+  body { position: relative; }
+  .st {
+    display: flex; flex-direction: column;
+    position: absolute; inset: 0;
+    background: var(--bg); z-index: 10;
+  }
+  .st.off { display: none; }
+  .st .bd { padding: 0 8px; }
+  .st-list { display: flex; flex-direction: column; gap: 2px; }
+  .st-empty { color: var(--txt3); font-size: 10px; padding: 8px 0; }
+  .st-row {
+    display: flex; align-items: center;
+    height: 32px; padding: 0 4px; gap: 6px;
+    border-radius: 6px;
+  }
+  .st-row:hover { background: var(--hover); }
+  .st-row-name {
+    flex: 1; font-size: 11px; color: var(--txt);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .st-row-actions { display: flex; gap: 2px; }
+  .st-row-btn {
+    width: 24px; height: 24px; border: none; background: none;
+    color: var(--txt3); cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .st-row-btn:hover { color: var(--txt); background: var(--hover); }
+  .st-row-btn svg { width: 12px; height: 12px; }
+
+  /* ─── Settings button (error view) ─── */
+  .ev-settings {
+    margin-top: 8px;
+  }
+  .settings-link {
+    border: none; background: none;
+    color: var(--txt3); font-family: inherit; font-size: 10px;
+    cursor: pointer; text-decoration: underline;
+    transition: color .1s;
+  }
+  .settings-link:hover { color: var(--txt2); }
 </style>
 </head>
 <body>
@@ -233,6 +297,9 @@
     <path d="M10 14h8M14 10v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
   <div class="ev-t" id="evMsg">Select a Section to organize.</div>
+  <div class="ev-settings">
+    <button class="settings-link" id="evSettingsBtn">Settings</button>
+  </div>
 </div>
 
 <!-- Main -->
@@ -241,6 +308,9 @@
     <div class="hd-ic"></div>
     <div class="hd-t" id="hN">Section</div>
     <div class="hd-n" id="hC">0 items</div>
+    <button class="pt" id="settingsBtn" title="Settings">
+      <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/><path d="M7 2v1.5M7 10.5V12M2 7h1.5M10.5 7H12M3.8 3.8l1.1 1.1M9.1 9.1l1.1 1.1M3.8 10.2l1.1-1.1M9.1 4.9l1.1-1.1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+    </button>
   </div>
   <div class="bd">
 
@@ -256,11 +326,14 @@
         <button class="sb" data-v="grid" title="Grid">
           <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="3" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="9" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="4" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/></svg>
         </button>
+        <button class="sb" data-v="auto" title="Auto Detect">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5L13 7l-3.5 1.5L8 12l-1.5-3.5L3 7l3.5-1.5L8 2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 3l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2L10.3 5l1.2-.5L12 3z" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity=".6"/></svg>
+        </button>
       </div>
     </div>
 
     <!-- Group: Alignment -->
-    <div class="grp">
+    <div class="grp" id="alG">
       <div class="al" id="al" data-ah="center" data-av="center">
         <div class="dt" data-h="start"  data-v="start"></div>
         <div class="dt" data-h="center" data-v="start"></div>
@@ -275,7 +348,7 @@
     </div>
 
     <!-- Group: Gap -->
-    <div class="grp">
+    <div class="grp" id="gaG">
       <div class="sl">Gap</div>
       <div class="rw">
         <div class="fi">
@@ -283,9 +356,7 @@
           <input type="number" id="gap" value="64" min="0" max="2000" step="8">
         </div>
       </div>
-      <div class="ps" data-t="gap">
-        <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
-      </div>
+      <div class="ps" id="psGap" data-t="gap"></div>
     </div>
 
     <!-- Group: Padding -->
@@ -304,9 +375,7 @@
             <input type="number" id="pA" value="64" min="0" max="2000" step="8">
           </div>
         </div>
-        <div class="ps" data-t="pad">
-          <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
-        </div>
+        <div class="ps" id="psPad" data-t="pad"></div>
       </div>
       <!-- Individual values (hidden) -->
       <div class="pd-multi" id="pI">
@@ -316,9 +385,7 @@
           <div class="fi"><span>B</span><input type="number" id="pB" value="64" min="0" max="2000" step="8"></div>
           <div class="fi"><span>L</span><input type="number" id="pL" value="64" min="0" max="2000" step="8"></div>
         </div>
-        <div class="ps" data-t="pad4">
-          <button class="ch">64</button><button class="ch">128</button><button class="ch">256</button><button class="ch">512</button>
-        </div>
+        <div class="ps" id="psPad4" data-t="pad4"></div>
       </div>
     </div>
 
@@ -340,6 +407,26 @@
   <div class="ft"><button class="ap" id="aB">Apply</button></div>
 </div>
 
+<!-- Settings -->
+<div class="st off" id="st">
+  <div class="hd">
+    <button class="pt" id="stBack" title="Back">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="hd-t">Settings</div>
+  </div>
+  <div class="bd">
+    <div class="grp">
+      <div class="sl">Custom Gap Values</div>
+      <div class="st-list" id="stGapValues"></div>
+    </div>
+    <div class="grp">
+      <div class="sl">Custom Padding Values</div>
+      <div class="st-list" id="stPadValues"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
@@ -349,9 +436,17 @@
   var gap=$('gap'),pA=$('pA'),pT=$('pT'),pR=$('pR'),pB=$('pB'),pL=$('pL');
   var pM=$('pM'),pS=$('pS'),pI=$('pI');
   var gB=$('gB'),gC=$('gC'),gR=$('gR'),gW=$('gW');
+  var alG=$('alG'),gaG=$('gaG');
+  var settingsBtn=$('settingsBtn'),evSettingsBtn=$('evSettingsBtn');
+  var st=$('st'),stBack=$('stBack');
+  var stGapValues=$('stGapValues'),stPadValues=$('stPadValues');
+  var psGap=$('psGap'),psPad=$('psPad'),psPad4=$('psPad4');
 
   var layout='horizontal',aH='center',aV='center';
   var padMulti=false;
+  var selectionValid=false;
+  var customValues={gap:[],pad:[]};
+  var DEFAULTS=[64,128,256,512];
 
   document.querySelectorAll('.fi').forEach(function(f){
     f.addEventListener('click',function(e){
@@ -359,11 +454,15 @@
     });
   });
 
+  function updateLayoutUI(){
+    gB.classList.toggle('on',layout==='grid');
+  }
+
   dG.querySelectorAll('.sb').forEach(function(b){
     b.addEventListener('click',function(){
       dG.querySelectorAll('.sb').forEach(function(x){x.classList.remove('on')});
       b.classList.add('on'); layout=b.dataset.v;
-      gB.classList.toggle('on',layout==='grid');
+      updateLayoutUI();
     });
   });
 
@@ -383,11 +482,9 @@
     pS.classList.toggle('off',padMulti);
     pI.classList.toggle('on',padMulti);
     if(padMulti){
-      // sync single → individual
       var v=pA.value;
       pT.value=v;pR.value=v;pB.value=v;pL.value=v;
     } else {
-      // sync individual → single (use top value)
       pA.value=pT.value;
     }
   });
@@ -398,28 +495,178 @@
     pT.value=v;pR.value=v;pB.value=v;pL.value=v;
   });
 
-  document.querySelectorAll('.ps').forEach(function(row){
-    var t=row.dataset.t;
-    row.querySelectorAll('.ch').forEach(function(c){
-      c.addEventListener('click',function(){
-        var v=c.textContent;
-        if(t==='gap') gap.value=v;
-        if(t==='pad'){pA.value=v;pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
-        if(t==='pad4'){pT.value=v;pR.value=v;pB.value=v;pL.value=v;}
-      });
+  // ── Render value chips for a .ps row ──
+  function renderChipRow(container, category, applyFn){
+    container.innerHTML='';
+    // Default chips
+    DEFAULTS.forEach(function(v){
+      var btn=document.createElement('button');
+      btn.className='ch';
+      btn.textContent=v;
+      btn.addEventListener('click',function(){ applyFn(v); });
+      container.appendChild(btn);
     });
-  });
+    // Custom chips
+    var vals=customValues[category]||[];
+    vals.forEach(function(v){
+      if(DEFAULTS.indexOf(v)!==-1) return; // skip if same as default
+      var btn=document.createElement('button');
+      btn.className='ch custom';
+      btn.textContent=v;
+      btn.addEventListener('click',function(){ applyFn(v); });
+      container.appendChild(btn);
+    });
+    // Add button
+    var add=document.createElement('button');
+    add.className='ch-add';
+    add.textContent='+';
+    add.title='Add custom value';
+    add.addEventListener('click',function(){
+      var inp=document.createElement('input');
+      inp.type='number'; inp.className='ch-input';
+      inp.min='0'; inp.max='2000'; inp.placeholder='px';
+      container.replaceChild(inp,add);
+      inp.focus();
+      var committed=false;
+      function commit(){
+        if(committed) return;
+        committed=true;
+        var num=parseInt(inp.value,10);
+        if(!isNaN(num)&&num>=0){
+          parent.postMessage({pluginMessage:{type:'save-value',category:category,value:num}},'*');
+        } else if(inp.parentNode===container){
+          container.replaceChild(add,inp);
+        }
+      }
+      inp.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){e.preventDefault();commit();}
+        if(e.key==='Escape'){committed=true;if(inp.parentNode===container)container.replaceChild(add,inp);}
+      });
+      inp.addEventListener('blur',function(){commit();});
+    });
+    container.appendChild(add);
+  }
+
+  function renderAllChips(){
+    renderChipRow(psGap,'gap',function(v){
+      gap.value=v;
+    });
+    renderChipRow(psPad,'pad',function(v){
+      pA.value=v;pT.value=v;pR.value=v;pB.value=v;pL.value=v;
+    });
+    renderChipRow(psPad4,'pad',function(v){
+      pT.value=v;pR.value=v;pB.value=v;pL.value=v;
+    });
+  }
+
+  // ── Render settings value lists ──
+  function renderSettingsValues(){
+    renderSettingsList(stGapValues,'gap');
+    renderSettingsList(stPadValues,'pad');
+  }
+
+  function renderSettingsList(container,category){
+    container.innerHTML='';
+    var vals=customValues[category]||[];
+    if(vals.length===0){
+      container.innerHTML='<div class="st-empty">No custom values.</div>';
+      return;
+    }
+    vals.forEach(function(v){
+      var row=document.createElement('div');
+      row.className='st-row';
+      var nm=document.createElement('div');
+      nm.className='st-row-name';
+      nm.textContent=v;
+      var acts=document.createElement('div');
+      acts.className='st-row-actions';
+      var del=document.createElement('button');
+      del.className='st-row-btn';
+      del.title='Delete';
+      del.innerHTML='<svg viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+      del.addEventListener('click',function(){
+        parent.postMessage({pluginMessage:{type:'delete-value',category:category,value:v}},'*');
+      });
+      acts.appendChild(del);
+      row.appendChild(nm);
+      row.appendChild(acts);
+      container.appendChild(row);
+    });
+  }
+
+  // ── getCurrentConfig ──
+  function getCurrentConfig(){
+    return {
+      layout:layout, alignH:aH, alignV:aV,
+      gap:+gap.value||0,
+      padMulti:padMulti, padAll:+pA.value||0,
+      padTop:+pT.value||0, padRight:+pR.value||0,
+      padBottom:+pB.value||0, padLeft:+pL.value||0,
+      gridColumns:+gC.value||0, gridRows:+gR.value||0, gridWrap:gW.checked
+    };
+  }
+
+  // ── restoreConfig ──
+  function restoreConfig(c){
+    layout=c.layout||'horizontal';
+    dG.querySelectorAll('.sb').forEach(function(x){x.classList.remove('on')});
+    var ab=dG.querySelector('[data-v="'+layout+'"]');
+    if(ab)ab.classList.add('on');
+    updateLayoutUI();
+    aH=c.alignH||'center'; aV=c.alignV||'center';
+    al.dataset.ah=aH; al.dataset.av=aV;
+    al.querySelectorAll('.dt').forEach(function(d){
+      d.classList.toggle('on',d.dataset.h===aH&&d.dataset.v===aV);
+    });
+    gap.value=c.gap!=null?c.gap:64;
+    padMulti=c.padMulti||false;
+    pM.classList.toggle('on',padMulti);
+    pS.classList.toggle('off',padMulti);
+    pI.classList.toggle('on',padMulti);
+    pA.value=c.padAll!=null?c.padAll:64;
+    pT.value=c.padTop!=null?c.padTop:64;
+    pR.value=c.padRight!=null?c.padRight:64;
+    pB.value=c.padBottom!=null?c.padBottom:64;
+    pL.value=c.padLeft!=null?c.padLeft:64;
+    gC.value=c.gridColumns!=null?c.gridColumns:0;
+    gR.value=c.gridRows!=null?c.gridRows:0;
+    gW.checked=c.gridWrap!=null?c.gridWrap:true;
+  }
+
+  // ── Settings navigation ──
+  function openSettings(){
+    renderSettingsValues();
+    st.classList.remove('off');
+    mn.classList.add('off');
+    ev.classList.remove('on');
+  }
+  function closeSettings(){
+    st.classList.add('off');
+    if(selectionValid){
+      mn.classList.remove('off');
+      ev.classList.remove('on');
+    } else {
+      mn.classList.add('off');
+      ev.classList.add('on');
+    }
+  }
+
+  settingsBtn.addEventListener('click',openSettings);
+  evSettingsBtn.addEventListener('click',openSettings);
+  stBack.addEventListener('click',closeSettings);
 
   function showErr(r){
     var m={'no-selection':'Select a Section to organize.',
            'not-a-section':'Selected element is not a Section.',
            'empty-section':'Section is empty. Add frames first.'};
     evMsg.textContent=m[r]||r||'Select a Section.';
+    selectionValid=false;
     ev.classList.add('on');mn.classList.add('off');
   }
   function showMain(name,count){
     hN.textContent=name;
     hC.textContent=count+(count===1?' item':' items');
+    selectionValid=true;
     ev.classList.remove('on');mn.classList.remove('off');
   }
 
@@ -427,19 +674,34 @@
     var msg=e.data.pluginMessage;if(!msg)return;
     if(msg.type==='init'){
       msg.selectionValid?showMain(msg.sectionName,msg.childCount):showErr(msg.errorReason);
+      if(msg.lastConfig) restoreConfig(msg.lastConfig);
+      if(msg.customValues){
+        customValues=msg.customValues;
+        renderAllChips();
+      }
     }
     if(msg.type==='done'){
       aB.classList.add('ok');aB.textContent='Done!';
       setTimeout(function(){aB.classList.remove('ok');aB.textContent='Apply';},800);
     }
+    if(msg.type==='values-updated'){
+      customValues=msg.values;
+      renderAllChips();
+      if(!st.classList.contains('off')) renderSettingsValues();
+    }
   };
 
+  // Render default chips immediately (custom ones arrive via init message)
+  renderAllChips();
+
   aB.addEventListener('click',function(){
+    var c=getCurrentConfig();
     parent.postMessage({pluginMessage:{
-      type:'apply',layout:layout,alignH:aH,alignV:aV,
-      padding:{top:+pT.value||0,right:+pR.value||0,bottom:+pB.value||0,left:+pL.value||0},
-      gap:+gap.value||0,
-      gridColumns:+gC.value||0,gridRows:+gR.value||0,gridWrap:gW.checked
+      type:'apply',layout:c.layout,alignH:c.alignH,alignV:c.alignV,
+      padding:{top:c.padTop,right:c.padRight,bottom:c.padBottom,left:c.padLeft},
+      gap:c.gap,
+      gridColumns:c.gridColumns,gridRows:c.gridRows,gridWrap:c.gridWrap,
+      padMulti:c.padMulti,padAll:c.padAll
     }},'*');
   });
 })();
