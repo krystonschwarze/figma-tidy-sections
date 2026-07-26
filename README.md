@@ -1,40 +1,46 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# Tidy Sections
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+Figma plugin that arranges the children of a section into a clean layout and resizes the section
+around them.
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+## What it does
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+Select a section, pick a direction, then hit Apply.
 
-  https://nodejs.org/en/download/
+- **Horizontal** and **Vertical** place every child in a single line.
+- **Grid** wraps children into rows. Columns and rows can be fixed or left on Auto.
+- **Keep current rows** reads the rows you already arranged by hand and only normalises gap,
+  padding and alignment.
 
-Next, install TypeScript using the command:
+The nine dot picker sets alignment on both axes. **Hug** resizes the section to fit its content, so
+only the cross axis alignment is visible. **Fixed** keeps the section at its current size and aligns
+the content inside it, which is when all nine positions matter.
 
-  npm install -g typescript
+Gap and padding presets are chips under each field. The plus chip stores a custom value in
+`figma.clientStorage`, and the settings screen removes values you no longer need.
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+## Development
 
-  npm install --save-dev @figma/plugin-typings
+```sh
+npm install
+npm run dev      # rebuild dist/ on every change
+npm test         # unit tests for the pure logic, via the Node test runner
+npm run build    # minified production build
+npm run verify   # typecheck, lint, format check, test, build
+```
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+Import the plugin in Figma via **Plugins > Development > Import plugin from manifest** and pick
+`manifest.json`. The manifest points at `dist/`, so run a build at least once before importing.
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+## Layout
 
-For more information, visit https://www.typescriptlang.org/
+| Path              | Role                                                             |
+| ----------------- | ---------------------------------------------------------------- |
+| `src/code.ts`     | Sandbox side. Validates messages, talks to the Figma API.        |
+| `src/layout.ts`   | Pure geometry. No Figma API, unit tested.                        |
+| `src/messages.ts` | Message contract shared by both sides.                           |
+| `src/ui/`         | Plugin window. `index.html` is a template, the build inlines it. |
+| `ui-kit/`         | Shared design system for all four Figma plugin repos.            |
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
-
-We recommend writing TypeScript code using Visual Studio code:
-
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
-
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+`ui-kit/` is the canonical copy. The sibling repos pull it in with `npm run sync:ui-kit`, so edit the
+design system here and sync outwards. See `ui-kit/README.md`.
