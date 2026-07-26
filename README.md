@@ -25,6 +25,7 @@ Gap and padding presets are chips under each field. The plus chip stores a custo
 npm install
 npm run dev      # rebuild dist/ on every change
 npm test         # unit tests for the pure logic, via the Node test runner
+npm run preview  # render every built plugin UI in Figma light and dark in the browser
 npm run build    # minified production build
 npm run verify   # typecheck, lint, format check, test, build
 ```
@@ -41,6 +42,10 @@ Import the plugin in Figma via **Plugins > Development > Import plugin from mani
 | `src/messages.ts` | Message contract shared by both sides.                           |
 | `src/ui/`         | Plugin window. `index.html` is a template, the build inlines it. |
 | `ui-kit/`         | Shared design system for all four Figma plugin repos.            |
+
+`scripts/preview.mjs` serves the built `dist/ui.html` of every sibling plugin side by side with
+Figma's theme variables injected, so a UI change can be checked in both themes without importing
+anything into Figma. Each plugin describes its window and its mock messages in `scripts/preview.json`.
 
 `ui-kit/` is the canonical copy. The sibling repos pull it in with `npm run sync:ui-kit`, so edit the
 design system here and sync outwards. See `ui-kit/README.md`.

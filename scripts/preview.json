@@ -1,0 +1,12 @@
+{
+  "width": 280,
+  "height": 560,
+  "messages": [
+    {
+      "type": "init",
+      "selection": { "valid": true, "name": "Buttons / Primary", "count": 12 },
+      "config": null,
+      "values": { "gap": [24], "pad": [40] }
+    }
+  ]
+}
