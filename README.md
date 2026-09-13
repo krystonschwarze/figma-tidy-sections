@@ -41,7 +41,7 @@ Import the plugin in Figma via **Plugins > Development > Import plugin from mani
 | `src/layout.ts`   | Pure geometry. No Figma API, unit tested.                        |
 | `src/messages.ts` | Message contract shared by both sides.                           |
 | `src/ui/`         | Plugin window. `index.html` is a template, the build inlines it. |
-| `ui-kit/`         | Shared design system for all four Figma plugin repos.            |
+| `ui-kit/`         | Shared design system for the sibling Figma plugin repos.         |
 
 `scripts/preview.mjs` serves the built `dist/ui.html` of every sibling plugin side by side with
 Figma's theme variables injected, so a UI change can be checked in both themes without importing
